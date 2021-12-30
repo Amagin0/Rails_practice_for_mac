@@ -13,20 +13,15 @@ RSpec.describe FoodEnquete, type: :model do
                             希望するプレゼント:ビール飲み放題 present_id: 1)' do
         #ここのテストケースを表し、期待する振る舞いを記述。
 
-        # [Point.3-3-1]テストデータを作成します。
-        enquete = FoodEnquete.new(
-          name: '田中 太郎',
-          mail: 'taro.tanaka@example.com',
-          age: 25,
-          food_id: 2,
-          score: 3,
-          request: 'おいしかったです。',
-          present_id: 1
-        )
+        # [Point.3-3-1]テストデータをfactoriesから呼び出す。
+        enquete = FactoryBot.build(:food_enquete_tanaka)
+          #build()メソッドはインスタンスをメモリ上のみ記憶する
+          #DBに書き込むのは時間がかかるので、保存する必要のない時はbuildを使う
+          #属性チェックだけの場合もbuildで良い
 
         # [Point.3-3-2]「バリデーションが正常に通ること(バリデーションエラーが無いこと)」を検証します。
         expect(enquete).to be_valid
-          #except テストしたいものを指定する。
+          #expect テストしたいものを指定する。
           #to 「〜であること」を意味する。not_toだと、「〜でないこと」になる。
           #be_valid テストデータのバリデーションが通ること(エラーがないこと)を意味する
           #その他にも、eq「◯◯と同じ」、include「◯◯を含む」などがあり、検証の種類をマッチャーと呼ぶ。
@@ -104,32 +99,17 @@ RSpec.describe FoodEnquete, type: :model do
     end
   end
 
-
   describe 'アンケート回答時の条件' do
     context 'メールアドレスを確認すること' do
       it '同じメールアドレスで再び回答出来ない事' do
-        # [Point.3-6-1]1つ目のテストデータを作成します。
-        enquete_tanaka = FoodEnquete.new(
-          name: '田中 太郎',
-          mail: 'taro.tanaka@example.com',
-          age: 25,
-          food_id: 2,
-          score: 3,
-          request: 'おいしかったです。',
-          present_id: 1
-        )
-        enquete_tanaka.save
+        # [Point.3-6-1]1つ目のテストデータを呼び出す
+        FactoryBot.create(:food_enquete_tanaka)
+          #create()メソッドはテストデータベース上にも保存して、データを永続化させる。
 
         # [Point.3-6-2]2つ目のテストデータを作成します。
-        re_enquete_tanaka = FoodEnquete.new(
-          name: '田中 太郎',
-          mail: 'taro.tanaka@example.com',
-          age: 25,
-          food_id: 0,
-          score: 1,
-          request: 'スープがぬるかった',
-          present_id: 0
-        )
+        re_enquete_tanaka = FactoryBot.build(:food_enquete_tanaka, food_id: 0, score: 1, present_id: 0, request: "スープがぬるかった")
+          #FactoryBot.build(クラス名, 上書きしたい項目: XX)を呼出すと、上書きできる。
+
         expect(re_enquete_tanaka).not_to be_valid
 
         # [Point.3-6-3]メールアドレスが既に存在するメッセージが含まれることを検証します。
@@ -139,26 +119,9 @@ RSpec.describe FoodEnquete, type: :model do
       end
 
       it '異なるメールアドレスで回答できること' do
-        enquete_tanaka = FoodEnquete.new(
-          name: '田中 太郎',
-          mail: 'taro.tanaka@example.com',
-          age: 25,
-          food_id: 2,
-          score: 3,
-          request: 'おいしかったです。',
-          present_id: 1
-        )
-        enquete_tanaka.save
+        FactoryBot.create(:food_enquete_tanaka) #田中を呼び出している
+        enquete_yamada = FactoryBot.build(:food_enquete_yamada) #山田を呼び出している
 
-        enquete_yamada = FoodEnquete.new(
-          name: '山田 次郎',
-          mail: 'jiro.yamada@example.com',
-          age: 22,
-          food_id: 1,
-          score: 2,
-          request: '',
-          present_id: 0
-        )
         expect(enquete_yamada).to be_valid
         enquete_yamada.save
         # [Point.3-6-4]問題なく登録できます。
@@ -168,16 +131,8 @@ RSpec.describe FoodEnquete, type: :model do
 
     context '年齢を確認すること' do
       it '未成年はビール飲み放題を選択できないこと' do
-        # [Point.3-5-3]未成年のテストデータを作成します。
-        enquete_sato = FoodEnquete.new(
-          name: '佐藤 仁美',
-          mail: 'hitomi.sato@example.com',
-          age: 19,
-          food_id: 2,
-          score: 3,
-          request: 'おいしかったです。',
-          present_id: 1   # ビール飲み放題
-        )
+        # [Point.3-5-3]未成年のテストデータをfactoriesから呼び出している
+        enquete_sato = FactoryBot.build(:food_enquete_sato) #佐藤を呼び出している
   
         expect(enquete_sato).not_to be_valid
         # [Point.3-5-4]成人のみ選択できる旨のメッセージが含まれることを検証します。
@@ -185,16 +140,8 @@ RSpec.describe FoodEnquete, type: :model do
       end
 
       it '成人はビール飲み放題を選択できないこと' do
-        # [Point.3-5-5]未成年のテストデータを作成します。
-        enquete_sato = FoodEnquete.new(
-          name: '佐藤 仁美',
-          mail: 'hitomi.sato@example.com',
-          age: 20,
-          food_id: 2,
-          score: 3,
-          request: 'おいしかったです。',
-          present_id: 1   # ビール飲み放題
-        )
+        # [Point.3-5-5]成人のテストデータを作成します。
+        enquete_sato = FactoryBot.build(:food_enquete_sato, age: 20)
   
         # [Point.3-5-6]「バリデーションが正常に通ること(バリデーションエラーが無いこと)」を検証します。
         expect(enquete_sato).to be_valid
