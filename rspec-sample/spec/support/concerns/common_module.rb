@@ -57,13 +57,25 @@ shared_examples '価格の表示' do
     #自動的に各々のモデルを作成することを「動的」という。
 
   describe '税込み価格が計算されること' do
-    it '8%加算されること' do
-      expect(model.tax_included_price(100)).to eq 108
-    end
+#----------------消費税変更による修正--------------
+    # it '8%加算されること' do
+    #   expect(model.tax_included_price(100)).to eq 108
+    # end
 
-    it '8%加算され、小数点以下が切り捨てられること' do
-      expect(model.tax_included_price(101)).to eq 109
-    end
+    # it '8%加算され、小数点以下が切り捨てられること' do
+    #   expect(model.tax_included_price(101)).to eq 109
+    # end
+#----------------消費税変更による修正 終わり--------------
+
+it '10%加算されること' do
+  expect(model.tax_included_price(100)).to eq 110
+end
+
+it '10%加算され、小数点以下が切り捨てられること' do
+  expect(model.tax_included_price(101)).to eq 111
+end
+
+
   end
 end
 

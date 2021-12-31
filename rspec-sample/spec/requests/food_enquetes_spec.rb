@@ -17,7 +17,8 @@ RSpec.describe "FoodEnquetes", type: :request do
         follow_redirect!
 
         # [Point.3-15-5]送信完了のメッセージが含まれることを検証します。
-        expect(response.body).to include "お食事に関するアンケートを送信しました"
+        # [文言修正に伴う変更] expect(response.body).to include "お食事に関するアンケートを送信しました"
+        expect(response.body).to include "ご回答ありがとうございました"
       end
     end
   end
@@ -33,8 +34,9 @@ RSpec.describe "FoodEnquetes", type: :request do
           #名前が未入力で、その他の入力値は全く未指定である異常な入力値を送信します。
         
         # [Point.3-15-7]送信完了のメッセージが含まれないことを検証します。
-        expect(response.body).not_to include "お食事に関するアンケートを送信しました"
-          #リダクレクト先をみる必要はないのでfollow_redirect!を実行しない。
+        # [文言変更に伴う修正] expect(response.body).not_to include "お食事に関するアンケートを送信しました"
+          expect(response.body).not_to include "ご回答ありがとうございました" 
+        #リダクレクト先をみる必要はないのでfollow_redirect!を実行しない。
       end
     end
   end

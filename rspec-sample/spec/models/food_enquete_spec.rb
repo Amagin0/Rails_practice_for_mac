@@ -116,25 +116,33 @@ RSpec.describe FoodEnquete, type: :model do
           #create()メソッドはテストデータベース上にも保存して、データを永続化させる。
       end
 
-      it '同じメールアドレスで再び回答出来ない事' do
+#----------同じメールアドレスで複数回答可能に仕様変更------------
+      # it '同じメールアドレスで再び回答出来ない事' do
 
-        # [Point.3-6-2]2つ目のテストデータを作成します。
+      #   # [Point.3-6-2]2つ目のテストデータを作成します。
+      #   re_enquete_tanaka = FactoryBot.build(:food_enquete_tanaka, food_id: 0, score: 1, present_id: 0, request: "スープがぬるかった")
+      #     #FactoryBot.build(クラス名, 上書きしたい項目: XX)を呼出すと、上書きできる。
+
+      #   expect(re_enquete_tanaka).not_to be_valid
+
+      #   # [Point.3-6-3]メールアドレスが既に存在するメッセージが含まれることを検証します。
+      #   expect(re_enquete_tanaka.errors[:mail]).to include(I18n.t('errors.messages.taken'))
+      #   expect(re_enquete_tanaka.save).to be_falsey
+      #   expect(FoodEnquete.all.size).to eq 1
+      # end
+#----------同じメールアドレスで複数回答可能に仕様変更 終わり------------
+
+      it '同じメールアドレスで再び解凍できること'do
         re_enquete_tanaka = FactoryBot.build(:food_enquete_tanaka, food_id: 0, score: 1, present_id: 0, request: "スープがぬるかった")
-          #FactoryBot.build(クラス名, 上書きしたい項目: XX)を呼出すと、上書きできる。
-
-        expect(re_enquete_tanaka).not_to be_valid
-
-        # [Point.3-6-3]メールアドレスが既に存在するメッセージが含まれることを検証します。
-        expect(re_enquete_tanaka.errors[:mail]).to include(I18n.t('errors.messages.taken'))
-        expect(re_enquete_tanaka.save).to be_falsey
-        expect(FoodEnquete.all.size).to eq 1
+        expect(re_enquete_tanaka).to be_valid
+        expect(re_enquete_tanaka.save).to be_truthy
+        expect(FoodEnquete.all.size).to eq 2
       end
 
       it '異なるメールアドレスで回答できること' do
         #FactoryBot.create(:food_enquete_tanaka)...before actionに追加
         #田中を呼び出している
         enquete_yamada = FactoryBot.build(:food_enquete_yamada) #山田を呼び出している
-
         expect(enquete_yamada).to be_valid
         enquete_yamada.save
         # [Point.3-6-4]問題なく登録できます。
