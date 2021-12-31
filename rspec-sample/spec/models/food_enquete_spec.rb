@@ -49,10 +49,15 @@ RSpec.describe FoodEnquete, type: :model do
   end
 
   describe '入力項目の有無' do
+    # [Point.3-11-2]インスタンスを共通化してテストデータを作成します。
+    let(:new_enquete) { FoodEnquete.new }
+      #FppdEnquente.newをnew_enquenteと定義して共通化している。
+
     context '必須入力であること' do
       # [Point.3-4-1]itを複数書くことができます。
       it 'お名前が必須であること' do
-        new_enquete = FoodEnquete.new
+        # new_enquete = FoodEnquete.new...let(:new_enquente)で共通化
+
         # [Point.3-4-2]バリデーションエラーが発生することを検証します。
         expect(new_enquete).not_to be_valid
         # [Point.3-4-3]必須入力のメッセージが含まれることを検証します。
@@ -60,14 +65,15 @@ RSpec.describe FoodEnquete, type: :model do
       end
 
       it 'メールアドレスが必須であること' do
-        new_enquete = FoodEnquete.new
+        # new_enquete = FoodEnquete.new...共通化
+
         expect(new_enquete).not_to be_valid
         expect(new_enquete.errors[:mail]).to include(I18n.t('errors.messages.blank'))
       end
 
       # [Point.3-4-1]itを複数書くことができます。
       it '登録できないこと' do
-        new_enquete = FoodEnquete.new
+        # new_enquete = FoodEnquete.new...共通化
 
         # [Point.3-4-4]保存に失敗することを検証します。
         expect(new_enquete.save).to be_falsey
@@ -77,7 +83,8 @@ RSpec.describe FoodEnquete, type: :model do
 
     context '任意入力であること' do
       it 'ご意見・ご要望が任意であること' do
-        new_enquete = FoodEnquete.new
+        # new_enquete = FoodEnquete.new...共通化
+
         expect(new_enquete).not_to be_valid
         # [Point.3-4-6]必須入力のメッセージが含まれないことを検証します。
         expect(new_enquete.errors[:request]).not_to include(I18n.t('errors.messages.blank'))
@@ -101,10 +108,13 @@ RSpec.describe FoodEnquete, type: :model do
 
   describe 'アンケート回答時の条件' do
     context 'メールアドレスを確認すること' do
-      it '同じメールアドレスで再び回答出来ない事' do
+      before do
         # [Point.3-6-1]1つ目のテストデータを呼び出す
         FactoryBot.create(:food_enquete_tanaka)
           #create()メソッドはテストデータベース上にも保存して、データを永続化させる。
+      end
+
+      it '同じメールアドレスで再び回答出来ない事' do
 
         # [Point.3-6-2]2つ目のテストデータを作成します。
         re_enquete_tanaka = FactoryBot.build(:food_enquete_tanaka, food_id: 0, score: 1, present_id: 0, request: "スープがぬるかった")
@@ -119,7 +129,8 @@ RSpec.describe FoodEnquete, type: :model do
       end
 
       it '異なるメールアドレスで回答できること' do
-        FactoryBot.create(:food_enquete_tanaka) #田中を呼び出している
+        #FactoryBot.create(:food_enquete_tanaka)...before actionに追加
+        #田中を呼び出している
         enquete_yamada = FactoryBot.build(:food_enquete_yamada) #山田を呼び出している
 
         expect(enquete_yamada).to be_valid
@@ -165,5 +176,9 @@ RSpec.describe FoodEnquete, type: :model do
       #sendメソッドに検証したいプライベートメソッドを指定する。
   end
 
-  
+  describe '共通メソッド' do
+  # [Point.3-12-3]共通化するテストケースを定義します。
+    it_behaves_like '価格の表示'
+    it_behaves_like '満足度の表示'
+  end
 end
