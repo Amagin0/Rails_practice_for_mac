@@ -48,63 +48,65 @@ RSpec.describe FoodEnquete, type: :model do
     end
   end
 
-  describe '入力項目の有無' do
-    # [Point.3-11-2]インスタンスを共通化してテストデータを作成します。
-    let(:new_enquete) { FoodEnquete.new }
-      #FppdEnquente.newをnew_enquenteと定義して共通化している。
+#---------------共通バリデーション化----------------
+  # describe '入力項目の有無' do
+  #   # [Point.3-11-2]インスタンスを共通化してテストデータを作成します。
+  #   let(:new_enquete) { FoodEnquete.new }
+  #     #FppdEnquente.newをnew_enquenteと定義して共通化している。
 
-    context '必須入力であること' do
-      # [Point.3-4-1]itを複数書くことができます。
-      it 'お名前が必須であること' do
-        # new_enquete = FoodEnquete.new...let(:new_enquente)で共通化
+  #   context '必須入力であること' do
+  #     # [Point.3-4-1]itを複数書くことができます。
+  #     it 'お名前が必須であること' do
+  #       # new_enquete = FoodEnquete.new...let(:new_enquente)で共通化
 
-        # [Point.3-4-2]バリデーションエラーが発生することを検証します。
-        expect(new_enquete).not_to be_valid
-        # [Point.3-4-3]必須入力のメッセージが含まれることを検証します。
-        expect(new_enquete.errors[:name]).to include(I18n.t('errors.messages.blank'))
-      end
+  #       # [Point.3-4-2]バリデーションエラーが発生することを検証します。
+  #       expect(new_enquete).not_to be_valid
+  #       # [Point.3-4-3]必須入力のメッセージが含まれることを検証します。
+  #       expect(new_enquete.errors[:name]).to include(I18n.t('errors.messages.blank'))
+  #     end
 
-      it 'メールアドレスが必須であること' do
-        # new_enquete = FoodEnquete.new...共通化
+  #     it 'メールアドレスが必須であること' do
+  #       # new_enquete = FoodEnquete.new...共通化
 
-        expect(new_enquete).not_to be_valid
-        expect(new_enquete.errors[:mail]).to include(I18n.t('errors.messages.blank'))
-      end
+  #       expect(new_enquete).not_to be_valid
+  #       expect(new_enquete.errors[:mail]).to include(I18n.t('errors.messages.blank'))
+  #     end
 
-      # [Point.3-4-1]itを複数書くことができます。
-      it '登録できないこと' do
-        # new_enquete = FoodEnquete.new...共通化
+  #     # [Point.3-4-1]itを複数書くことができます。
+  #     it '登録できないこと' do
+  #       # new_enquete = FoodEnquete.new...共通化
 
-        # [Point.3-4-4]保存に失敗することを検証します。
-        expect(new_enquete.save).to be_falsey
-          #真偽値(true/false)を検証するとき、be_truthy/be_falseyをマッチャーとする。
-      end
-    end
+  #       # [Point.3-4-4]保存に失敗することを検証します。
+  #       expect(new_enquete.save).to be_falsey
+  #         #真偽値(true/false)を検証するとき、be_truthy/be_falseyをマッチャーとする。
+  #     end
+  #   end
 
-    context '任意入力であること' do
-      it 'ご意見・ご要望が任意であること' do
-        # new_enquete = FoodEnquete.new...共通化
+  #   context '任意入力であること' do
+  #     it 'ご意見・ご要望が任意であること' do
+  #       # new_enquete = FoodEnquete.new...共通化
 
-        expect(new_enquete).not_to be_valid
-        # [Point.3-4-6]必須入力のメッセージが含まれないことを検証します。
-        expect(new_enquete.errors[:request]).not_to include(I18n.t('errors.messages.blank'))
-          #エラーメッセージが出ないかどうか検証している→任意入力(ブランクでもok)ということがわかる
-      end
-    end
-  end
+  #       expect(new_enquete).not_to be_valid
+  #       # [Point.3-4-6]必須入力のメッセージが含まれないことを検証します。
+  #       expect(new_enquete.errors[:request]).not_to include(I18n.t('errors.messages.blank'))
+  #         #エラーメッセージが出ないかどうか検証している→任意入力(ブランクでもok)ということがわかる
+  #     end
+  #   end
+  # end
 
-  describe 'メールアドレスの形式' do
-    context '不正な形式のメールアドレスの場合' do
-      it 'エラーになること' do
-        new_enquete = FoodEnquete.new
-        # [Point.3-7-1]不正な形式のメールアドレスを入力します。
-        new_enquete.mail = "taro.tanaka"
-        expect(new_enquete).not_to be_valid
-        # [Point.3-7-2]不正な形式のメッセージが含まれることを検証します。
-        expect(new_enquete.errors[:mail]).to include(I18n.t('errors.messages.invalid'))
-      end
-    end
-  end
+  # describe 'メールアドレスの形式' do
+  #   context '不正な形式のメールアドレスの場合' do
+  #     it 'エラーになること' do
+  #       new_enquete = FoodEnquete.new
+  #       # [Point.3-7-1]不正な形式のメールアドレスを入力します。
+  #       new_enquete.mail = "taro.tanaka"
+  #       expect(new_enquete).not_to be_valid
+  #       # [Point.3-7-2]不正な形式のメッセージが含まれることを検証します。
+  #       expect(new_enquete.errors[:mail]).to include(I18n.t('errors.messages.invalid'))
+  #     end
+  #   end
+  # end
+  #---------------共通バリデーション化　終わり----------------
 
   describe 'アンケート回答時の条件' do
     context 'メールアドレスを確認すること' do
@@ -174,6 +176,11 @@ RSpec.describe FoodEnquete, type: :model do
     end
       #モデルのプライベートメソッドはインスタンスから直接呼び出すことができない。
       #sendメソッドに検証したいプライベートメソッドを指定する。
+  end
+
+  describe '共通バリデーション' do
+    it_behaves_like '入力項目の有無'
+    it_behaves_like 'メールアドレスの形式'
   end
 
   describe '共通メソッド' do
