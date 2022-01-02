@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <title>Snippet App</title>
+  </head>
+  <body>
+    <div id="app">
+      <p>{{ message }}</p>
+      <p>{{ message2 }}</p>
+      <button v-on:click="changeMsg">Change</button>
+      <ul>
+        <li v-for="data in list">{{ data.title }}</li>
+      </ul>
+      <button v-on:click="listSnippet">listSnippet</button>
+      <div>
+        <input v-model="title" placeholder="title">
+        <input v-model="language" placeholder="language">
+        <input v-model="contents" placeholder="contents">
+      </div>
+      <button v-on:click="postSnippet">postSnippet</button>
+    </div>
+    <!-- divで囲んだ部分にJS側で処理した後の状態を反映させる内容を記載-->
+    <!-- v-on:click="changeMsg"でclickが行われたときにchangeMsgメソッドを実行する -->
+    <!-- v-forでdata()で定義した配列listの各要素をdataとして１つ目から最後まで反復して処理させる -->
+    <!-- v-modelとすることで、data(){}で定義した変数の値を表示させる -->
+    <!-- methodsの中などで処理させた場合も強制的にリンクされ、変数の値に合わせてリアルタイムに表示します -->
+
+    <script>
+      new Vue({ // {} 内部でVue.jsの書式に従って記述することにより、HTML内へ処理結果を反映させることができる
+        el: '#app', // Vue.jsの形式で書かれたコードの実行けっかを反映させるhtml要素のidを指定
+        data () {  // {}で囲まれた部分に書かれた箇所では変数の定義と初期値の代入ができる
+          return {
+            message: 'Hello Vue!',
+            message2: 'Hoge',
+            list: [{title: 'title1'}, {title: 'title2'}],
+            title: 'new title',
+            language: 'Ruby',
+            contents: 'contents'
+          }
+        },
+        mounted () { // mountedとすることで、アプリが立ち上がった最初のタイミングで実行される関数を定義できる
+          this.setMsg();  // thisとすることで、Vueオブジェクト自身を指すことになる
+        },                // this.setMsg()とすることで、これから定義するsetMsgメソッドを実行できる
+        methods: {  // methodsとすることで、Vueオブジェクト内に関数を定義できる
+          setMsg: function() {
+            this.message = 'Set Message'; // this.messageとすることで、Vueオブジェクトのdata内で定義した変数
+          },                              // messageを参照できる。ここではSet Messageという文字列を代入させている
+          changeMsg: function() {         // changeMsgメソッドを定義してボタンクリックに応じて処理が行われる
+            this.message = 'Changed Message'
+            axios.get('/snippets.json')  // changeMsgメソッドの中で、axiosという通信ライブラリを用いてRailsで実装したAPIを呼び出す
+            .then(response => ( // 呼び出したAPIのレスポンスを.then(response => ()) の=>()の中でresponseとして取得し、１件目のタイトルを変数message2に代入する
+              this.message2 = response.data[0]['title']
+              )
+            );
+          },
+          listSnippet: function() {
+            axios.get('/snippets.json')
+            .then(response => (
+              this.list = response.data // response.dataで配列になっている状態のまま変数listに代入する
+              )
+            );
+          },
+          postSnippet: function() {
+            axios.post('/snippets.json', {title: this.title, language: this.language, contents: this.contents})
+            // axios.postで新しくデータ(ここではsnippet)を投稿できる。title:'this.title', language:'this.language', contents:'this.contents' の 1 snippet を新たに投稿する
+              .then(response => (
+                this.listSnippet()
+              )
+            );
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
