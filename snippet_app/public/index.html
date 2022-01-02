@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@1.5/dist/vuetify.min.css" rel="stylesheet">
+    <!-- GoogleフォントとVuetifyで指定されているcssファイルを読み込んでいる -->
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@1.5/dist/vuetify.js"></script>
+    <!-- VuetifyのJSファイルをCDNから読み込ませる -->
+
+    <title>Snippet App</title>
+  </head>
+  <body>
+    <v-app id="app">
+      <!-- Vuetify では <div id='app'> の代わりに <v-app id='app'> とする決まりになっている -->
+      <v-toolbar color="red lighten-3" dark> <!-- ツールバーを表示させる -->
+        <v-toolbar-title>Snippet App</v-toolbar-title> <!-- ツールバーのタイトルを表示させる -->
+        <v-spacer></v-spacer> <!-- 余白を作成する。このタグの後に指定されたタグは右寄せで配置される -->
+        <v-btn flat v-on:click="togglePostModal()">New Snippet</v-btn> <!-- ボタンを配置する -->
+      </v-toolbar>
+      <v-container>
+        <v-layout>
+          <v-flex xs5>
+            <div style="margin: 10px">
+            <h2>Snippets Shortcut</h2>
+            <ul>
+              <li>Snippet Title</li>
+            </ul>
+          </div>
+          </v-flex>
+          <v-flex xs7>
+            <v-card style="margin-top: 10px" v-for="snippet in snippetList">
+              <!-- v-for="新たな変数名 in data()で定義した配列"はdata()で定義した配列の各要素を -->
+              <!-- 要素の数分だけ新たな変数snippetに代入し、v-card内で扱えるようにする -->
+              <v-card-title primary-title>
+                <h3 class="headline">{{ snippet.title }}</h3>
+                <!-- v-for で配列snippetListから1つ目の要素から繰り返してタグ（<v-card> ~ </v-card>）の -->
+                <!-- 範囲内で変数snippetとして扱えるようになる。snippet['title']でも同じことができる -->
+              </v-card-title>
+              <div style="margin: 10px 20px;">
+                <textarea style='width :100%; height:300px; background-color: #efefef; padding: 3px'> hoge </textarea>
+              </div>
+
+              <v-card-actions>
+                <v-btn flat color="red" v-on:click="togglePutModal()">Update</v-btn>
+                <v-btn flat color="gray">Delete</v-btn>
+              </v-card-actions>
+              <!-- v-card-actionsは、v-cardに対する何らかの操作をするボタンなどを表示するためのエリアとして定義されている -->
+            </v-card>
+          </v-flex>
+        </v-layout>
+        <v-dialog v-model="dialogPostFlag" width="800" persistent>
+          <!-- v-dialogではv-model=変数名でVue側で保持している変数(data:{}内にある変数)をbinding(紐づいている)させることができる -->
+          <!-- 変数dialogPostFlagがtrueの場合は表示、falseの場合は非表示としてModal windowが表示される -->
+          <v-card>
+            <v-card-title class="headline red lighten-3 white--text" primary-title>
+              Create Form
+            </v-card-title>
+            <v-text-field v-model="postTitle" label="Snippet Title" required style='margin:20px; margin-top:30px'></v-text-field>
+            <v-flex d-flex>
+              <v-text-field v-model="postLanguage" label="Language" required style='margin: 20px 20px'></v-text-field>
+            </v-flex>
+            <v-card-text>
+              <p>Snippet</p>
+              <div style='width:100%'>
+                <textarea style='width:100%; height:300px; background-color: #efefef; padding: 3px' v-model='postContents'></textarea>
+              </div>
+            </v-card-text>
+            <v-divider></v-divider>
+            <v-card-actions>
+              <v-btn color="#grey lighten-4" flat v-on:click="togglePostModal">
+                Cancel
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn color="#frey lighten-4" flat v-on:click="togglePostModal">
+                Add Snippet
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogPutFlag" width="800" persistent>
+          <v-card>
+            <v-card-title class="headline red lighten-3 white--text" primary-title>
+              Edit Form
+            </v-card-title>
+            <v-text-field v-model="putTitle" label="Snippet Title" required style='margin:20px; margin-top:30px'></v-text-field>
+            <v-flex d-flex>
+              <v-text-field v-model="putLanguage" label="Language" required style='margin:20px; margin-bottom:0px; margin-left:20px'></v-text-field>
+            </v-flex>
+            <v-card-text>
+              <p>Snippet</p>
+              <div style='width:100%;'>
+                <textarea style='width:100%; height:300px; background-color: #efefef; padding:3px' v-model='putContents'></textarea>
+              </div>
+            </v-card-text>
+
+            <v-divider></v-divider>
+
+            <v-card-actions>
+              <v-btn color="#grey lighten-4" flat v-on:click="togglePutModal">
+                Cancel
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn color="red" flat v-on:click="putSnippet">
+                Update Snippet
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-container>
+    </v-app>
+    <script>
+
+      new Vue({
+        el: '#app',
+        data () {
+          return {
+            snippetList: ['',''], // 変数snippetListに配列を定義している
+            allData: ['',''],
+            dialogPostFlag: false,
+            postTitle: '',
+            postLanguage: '',
+            postContents: '',
+
+            dialogPutFlag: false,
+            putTitle: '',
+            putLanguage: '',
+            putContents: '',
+          }
+        },
+        mounted () {
+          this.listSnippet();
+        },
+        methods: {
+          listSnippet: function() {
+            axios.get('/snippets.json')
+            .then(response => {
+              this.allData = response.data
+              this.snippetList = this.allData
+              }
+            );
+          },
+          togglePostModal: function() {
+            this.dialogPostFlag = !this.dialogPostFlag
+          },
+          postSnippet: function() {
+            axios.post('/snippets.json', {title:this.postTitle, language:this.postLanguage, contents:this.postContents})
+              .then(response => {
+                this.listSnippet();
+                this.postTitle = ''
+                this.postLanguage = ''
+                this.postContents = ''
+              }
+            );
+            this.dialogPostFlag = !this.dialogPostFlag
+          },
+          togglePutModal: function() {
+            this.dialogPutFlag = !this.dialogPutFlag
+          },
+        },
+      }
+    )
+
+    </script>
+  </body>
+</html>
