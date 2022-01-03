@@ -13,6 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/vuetify@1.5/dist/vuetify.js"></script>
     <!-- VuetifyのJSファイルをCDNから読み込ませる -->
 
+    <script src="https://cdn.rawgit.com/showdownjs/showdown/1.9.0/dist/showdown.min.js"></script>
+    <!-- showdown.js...Markdown形式で記載された入力を、HTML形式に変換してリッチに表示させてくれるライブラリ -->
     <title>Snippet App</title>
   </head>
   <body>
@@ -23,32 +25,50 @@
         <v-spacer></v-spacer> <!-- 余白を作成する。このタグの後に指定されたタグは右寄せで配置される -->
         <v-btn flat v-on:click="togglePostModal()">New Snippet</v-btn> <!-- ボタンを配置する -->
       </v-toolbar>
-      <v-container>
+      <v-container style="height: 1000px; max-width: 2400px;">
         <v-layout>
           <v-flex xs5>
             <div style="margin: 10px">
-            <h2>Snippets Shortcut</h2>
-            <ul>
-              <li>Snippet Title</li>
-            </ul>
-          </div>
+              <h2>Select Language</h2>
+              <v-select v-model='language' :items='languages' label='Language' v-on:change="abstract"></v-select>
+                <!-- v-select...セレクトボックス -->
+                <!-- v-model'language...選択した結果の値を代入する変数の紐付け -->
+                <!-- :items='languages'...v-bind:itemsの略で、選択候補の一覧を指定する配列 -->
+                <!-- label="Language"...セレクトボックスの説明として載せるラベル -->
+                <!-- v-on:change="abstract"...セレクトボックスの値が変わったときに abstract メソッドを呼び出すというイベント -->
+              <h2>Snippets Shortcut</h2>
+              <ul>
+                <li v-for="snippet in snippetList"><span id='name' v-on:click="goElem(snippet.id)">[{{ snippet.language }}] {{ snippet.title }}</span></li>
+                  <!-- v-for="snippet in snippetList"で配列 snippetList の各要素を snippet に代入させながら繰り返し実行する。 form_withみたいな感じ-->
+                  <!-- v-on:click="goElem(snippet.id)"とすることで、クリック時に snippet の id key の値を引数としてメソッド goElem を実行するという挙動になる。 -->
+              </ul>
+            </div>
           </v-flex>
-          <v-flex xs7>
+          <v-flex xs7 style='margin:10px'>
+            <h2>Search Snippet</h2>
+            <v-text-field v-model='searchWord' v-on:keyup="abstract" label="Input Keyword" style='margin-top:4px'></v-text-field>
             <v-card style="margin-top: 10px" v-for="snippet in snippetList">
               <!-- v-for="新たな変数名 in data()で定義した配列"はdata()で定義した配列の各要素を -->
               <!-- 要素の数分だけ新たな変数snippetに代入し、v-card内で扱えるようにする -->
+              <a v-bind:id='snippet.id'></a>
               <v-card-title primary-title>
-                <h3 class="headline">{{ snippet.title }}</h3>
+                <div style="background-color:#ffcdd2">
+                  <a v-bind:id='snippet.id'></a>
+                    <!-- コンテンツを参照する先の idを記載する -->
+                  <h3 class="headline">[{{ snippet.language }}] {{ snippet.title }}</h3>
+                </div>
                 <!-- v-for で配列snippetListから1つ目の要素から繰り返してタグ（<v-card> ~ </v-card>）の -->
                 <!-- 範囲内で変数snippetとして扱えるようになる。snippet['title']でも同じことができる -->
               </v-card-title>
               <div style="margin: 10px 20px;">
-                <textarea style='width :100%; height:300px; background-color: #efefef; padding: 3px'> hoge </textarea>
+                <div v-html='showdown.makeHtml(snippet.contents)'></div>
               </div>
 
               <v-card-actions>
                 <v-btn flat color="red" v-on:click="togglePutModal(snippet.id)">Update</v-btn>
-                <v-btn flat color="gray" v-on:click="toggleDeleteModal()">Delete</v-btn>
+                <v-btn flat color="gray" v-on:click="toggleDeleteModal(snippet.id)">Delete</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn flat color="red" v-on:click="goTop">Go Top</v-btn>
               </v-card-actions>
               <!-- v-card-actionsは、v-cardに対する何らかの操作をするボタンなどを表示するためのエリアとして定義されている -->
             </v-card>
@@ -64,10 +84,11 @@
             <v-text-field v-model="postTitle" label="Snippet Title" required style='margin:20px; margin-top:30px'></v-text-field>
             <v-flex d-flex>
               <v-text-field v-model="postLanguage" label="Language" required style='margin: 20px 20px'></v-text-field>
+              <v-select v-model='postLanguage' :items="languagesForEdit" label="Select from history" style='margin:20px; margin-bottom:0px; margin-left:0px'></v-select>
             </v-flex>
             <v-card-text>
               <p>Snippet</p>
-              <div style='width:100%'>
+              <div style='width:100%;'>
                 <textarea style='width:100%; height:300px; background-color: #efefef; padding: 3px' v-model='postContents'></textarea>
               </div>
             </v-card-text>
@@ -77,7 +98,7 @@
                 Cancel
               </v-btn>
               <v-spacer></v-spacer>
-              <v-btn color="#frey lighten-4" flat v-on:click="togglePostModal">
+              <v-btn color="#red" flat v-on:click="postSnippet">
                 Add Snippet
               </v-btn>
             </v-card-actions>
@@ -137,14 +158,17 @@
 
       </v-container>
     </v-app>
-    <script>
 
+    <script>
       new Vue({
         el: '#app',
         data () {
           return {
             snippetList: ['',''], // 変数snippetListに配列を定義している
             allData: ['',''],
+            languages: ['ALL'],
+            languagesForEdit: [],
+            language: 'ALL',
             dialogPostFlag: false,
             postTitle: '',
             postLanguage: '',
@@ -156,58 +180,77 @@
             putContents: '',
 
             dialogDeleteFlag: false,
+            searchWord: ''
           }
         },
         mounted () {
           this.listSnippet();
+          options = { headerLevelStart: 3, omitExtraWLInCodeBlocks: true, tables: true, simpleLineBreaks: true, simplifiedAutoLink: true }
+          this.showdown = new showdown.Converter(options)
+          // optionに連想配列型で showdownの細かいオプションを定義し、new showdown.Converter(options)で扱えるようにしている
         },
         methods: {
           listSnippet: function() {
             axios.get('/snippets.json')
             .then(response => {
+              console.log(response)
               this.allData = response.data
               this.snippetList = this.allData
+              this.listLanguages(); // セレクトボックスで選択した言語と一致するメソッドの呼び出しを行う
+              this.abstract();
+            });
+          },
+          listLanguages: function() {
+            this.languages = []
+            this.languagesForEdit = []
+            this.languages.push('ALL')
+            for (i=0;i<this.allData.length;i++) {
+              if (this.languages.indexOf(this.allData[i].language) == -1) {
+                // indexOf関数では str1.indexOf(str2)と記述することで、str2の文字列がstr1の何文字目かで一致するかを返し、一致しないと -1 と返す。
+                // this.languages.indexOf(this.allData[i].language) == -1とすることで、文字列の部分一致を判定している。
+                this.languages.push(this.allData[i].language)
+                this.languagesForEdit.push(this.allData[i].language)
               }
-            );
+            }
           },
           togglePostModal: function() {
             this.dialogPostFlag = !this.dialogPostFlag
           },
-          postSnippet: function() {
-            axios.post('/snippets.json', {title:this.postTitle, language:this.postLanguage, contents:this.postContents})
-              .then(response => {
-                this.listSnippet();
-                this.postTitle = ''
-                this.postLanguage = ''
-                this.postContents = ''
-              }
-            );
-            this.dialogPostFlag = !this.dialogPostFlag
-          },
           togglePutModal: function(id) {
             axios.get('/snippets/' + id + '.json')
-              .then(response => {
-                this.putTitle = response.data.title
-                this.putLanguage = response.data.language
-                this.putContents = response.data.contents
-              }
+            .then(response => {
+              this.putTitle = response.data.title
+              this.putLanguage = response.data.language
+              this.putContents = response.data.contents
+            }
             );
             this.id = id
             this.dialogPutFlag = !this.dialogPutFlag
           },
-            putSnippet: function() {
-              axios.put('/snippets/' + this.id + '.json', {title:this.putTitle, language:this.putLanguage, contents:this.putContents})
-                .then(response => {
-                  this.listSnippet();
-                }
-              );
-              this.dialogPutFlag = !this.dialogPutFlag
+          postSnippet: function() {
+            axios.post('/snippets.json', {title:this.postTitle, language:this.postLanguage, contents:this.postContents})
+            .then(response => {
+              this.listSnippet();
+              this.postTitle = ''
+              this.postLanguage = ''
+              this.postContents = ''
+            }
+            );
+            this.dialogPostFlag = !this.dialogPostFlag
           },
-            deleteSnippet: function() {
-              axios.delete('/snippets/' + this.id + '.json')
-              .then(response => {
-                this.listSnippet();
-              }
+          putSnippet: function() {
+            axios.put('/snippets/' + this.id + '.json', {title:this.putTitle, language:this.putLanguage, contents:this.putContents})
+            .then(response => {
+              this.listSnippet();
+            }
+            );
+            this.dialogPutFlag = !this.dialogPutFlag
+          },
+          deleteSnippet: function() {
+            axios.delete('/snippets/' + this.id + '.json')
+            .then(response => {
+              this.listSnippet();
+            }
             );
             this.dialogDeleteFlag = !this.dialogDeleteFlag
           },
@@ -215,10 +258,43 @@
             this.id = id
             this.dialogDeleteFlag = !this.dialogDeleteFlag
           },
-        },
-      }
-    )
-
-    </script>
+          goElem: function(id) {
+            document.getElementById(id).scrollIntoView(true)
+            // goElem メソッドの引数を id として扱い、その id に紐づくHTML上の要素の位置まで移動させる。
+            // scrollIntoView は指定した箇所までスクロールしてくれる
+          },
+          goTop: function() {
+            document.getElementById("app").scrollIntoView(true)
+            // getElementById("app")という記述で、<v-app id="app">のところまでスクロールしてくれる
+            },
+            abstract: function() {
+              if (this.language == 'ALL') {
+                // 'ALL'を選択したときに全ての言語が抽出対象になるように指定している
+                this.snippetList = []
+                for (i=0;i<this.allData.length;i++) {
+                  // allDataの配列に含まれる要素の数だけ反復処理を行う
+                  if ((this.allData[i].contents.indexOf(this.searchWord) !== -1) || (this.allData[i].title.indexOf(this.searchWord) !== -1) || (this.allData[i].language.indexOf(this.searchWord) !== -1)) {
+                    // "stringsA".indexOf("stringsB") の形で、"stringsA" の中に "stringsB" の文字列が含まれているか、否かの判定を行っている。
+                    // 含まれていなかった場合は -1 が返るので、含まれなかった場合は処理しない、という意味になる。
+                    this.snippetList.push(this.allData[i])
+                    // allDataの各要素を１つずつ空配列だったsnippetListに追加している
+                  }
+                }
+              } else if (this.language != '') {
+                // 言語の選択がある場合は抽出対象となるように指定している
+                this.snippetList = []
+                for (i=0;i<this.allData.length;i++) {
+                  if (this.allData[i].language == this.language) {
+                    if ((this.allData[i].contents.indexOf(this.searchWord) !== -1) || (this.allData[i].title.indexOf(this.searchWord) !== -1) || (this.allData[i].language.indexOf(this.searchWord) !== -1)) {
+                      this.snippetList.push(this.allData[i])
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        )
+        </script>
   </body>
-</html>
+  </html>
