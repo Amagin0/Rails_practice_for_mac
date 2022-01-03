@@ -47,8 +47,8 @@
               </div>
 
               <v-card-actions>
-                <v-btn flat color="red" v-on:click="togglePutModal()">Update</v-btn>
-                <v-btn flat color="gray">Delete</v-btn>
+                <v-btn flat color="red" v-on:click="togglePutModal(snippet.id)">Update</v-btn>
+                <v-btn flat color="gray" v-on:click="toggleDeleteModal()">Delete</v-btn>
               </v-card-actions>
               <!-- v-card-actionsは、v-cardに対する何らかの操作をするボタンなどを表示するためのエリアとして定義されている -->
             </v-card>
@@ -113,6 +113,28 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
+
+        <v-dialog v-model="dialogDeleteFlag" width="400">
+          <v-card>
+            <v-card-title class="headline red lighten-3 white--text" primary-title>
+              Confirm
+            </v-card-title>
+            <v-spacer></v-spacer>
+            <v-card-text>
+              <p>本当に削除してもよろしいですか？</p>
+            </v-card-text>
+
+            <v-divider></v-divider>
+
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="red" flat v-on:click="deleteSnippet()">
+                Delete
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
       </v-container>
     </v-app>
     <script>
@@ -132,6 +154,8 @@
             putTitle: '',
             putLanguage: '',
             putContents: '',
+
+            dialogDeleteFlag: false,
           }
         },
         mounted () {
@@ -160,8 +184,36 @@
             );
             this.dialogPostFlag = !this.dialogPostFlag
           },
-          togglePutModal: function() {
+          togglePutModal: function(id) {
+            axios.get('/snippets/' + id + '.json')
+              .then(response => {
+                this.putTitle = response.data.title
+                this.putLanguage = response.data.language
+                this.putContents = response.data.contents
+              }
+            );
+            this.id = id
             this.dialogPutFlag = !this.dialogPutFlag
+          },
+            putSnippet: function() {
+              axios.put('/snippets/' + this.id + '.json', {title:this.putTitle, language:this.putLanguage, contents:this.putContents})
+                .then(response => {
+                  this.listSnippet();
+                }
+              );
+              this.dialogPutFlag = !this.dialogPutFlag
+          },
+            deleteSnippet: function() {
+              axios.delete('/snippets/' + this.id + '.json')
+              .then(response => {
+                this.listSnippet();
+              }
+            );
+            this.dialogDeleteFlag = !this.dialogDeleteFlag
+          },
+          toggleDeleteModal: function(id) {
+            this.id = id
+            this.dialogDeleteFlag = !this.dialogDeleteFlag
           },
         },
       }
